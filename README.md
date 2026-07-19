@@ -4,6 +4,9 @@ Private, local stdio MCP server for normal-user IServ access. It shares the
 native-keychain profile created by `@aplanatic/iserv-cli` and never returns
 passwords, cookies, or tokens to agents.
 
+Authenticate npm for the private Aplanatic GitHub Packages registry, then run
+`npm install --global @aplanatic/iserv-mcp`.
+
 ```json
 {
   "mcpServers": {

@@ -17,7 +17,7 @@
     "prepare": "npm run build"
   },
   "dependencies": {
-    "@aplanatic/iserv-api": "git+https://github.com/Aplanatic/iserv-api.git#main",
+    "@aplanatic/iserv-api": "^1.5.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^4.3.6"
   },
