@@ -17,7 +17,7 @@
     "prepare": "npm run build"
   },
   "dependencies": {
-    "@aplanatic/iserv-api": "github:Aplanatic/iserv-api#main",
+    "@aplanatic/iserv-api": "git+https://github.com/Aplanatic/iserv-api.git#main",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^4.3.6"
   },
@@ -31,5 +31,9 @@
   },
   "engines": { "node": ">=22" },
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/Aplanatic/iserv-mcp.git" }
+  "repository": { "type": "git", "url": "git+https://github.com/Aplanatic/iserv-mcp.git" },
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  }
 }
