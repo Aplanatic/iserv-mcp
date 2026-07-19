@@ -48,7 +48,11 @@ describe("IServ MCP server", () => {
       ),
     ).toBe(true);
     expect(resources.map((resource) => resource.uri)).toEqual(
-      expect.arrayContaining(["iserv://routes", "iserv://modules"]),
+      expect.arrayContaining([
+        "iserv://routes",
+        "iserv://modules",
+        "iserv://auth/status",
+      ]),
     );
     expect(resourceTemplates.map((resource) => resource.uriTemplate)).toContain(
       "iserv://auth/status{?profile}",

@@ -82,6 +82,24 @@ export function createIServMcpServer(): McpServer {
   );
   server.registerResource(
     "auth-status",
+    "iserv://auth/status",
+    {
+      title: "IServ authentication status",
+      description: "Active local profile state without credentials",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(await new AuthBroker().status()),
+        },
+      ],
+    }),
+  );
+  server.registerResource(
+    "auth-status-profile",
     new ResourceTemplate("iserv://auth/status{?profile}", { list: undefined }),
     {
       title: "IServ authentication status",
