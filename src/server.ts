@@ -89,7 +89,7 @@ class SessionPool {
 }
 
 export function createIServMcpServer(): McpServer {
-  const server = new McpServer({ name: "aplanatic-iserv", version: "0.5.8" });
+  const server = new McpServer({ name: "aplanatic-iserv", version: "0.5.9" });
   const sessions = new SessionPool();
   const withClient = async (
     action: (client: IServClient) => Promise<unknown>,
