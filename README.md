@@ -56,7 +56,8 @@ booleans; it does not print account names, room names, messages, hostnames, or
 response bodies. The check covers cached auth, ranked route search, concurrent batch reads,
 Etherpad, and Messenger over the real production stdio path.
 
-Run `iserv auth login --url iserv.example` before starting the server. The real
+Run `iserv auth login --url iserv.example` (or restore an existing keychain profile)
+before starting the server. Ephemeral CLI logins are not restored by MCP. The real
 instance hostname and all credentials must remain in local configuration and
 the operating system credential store.
 
