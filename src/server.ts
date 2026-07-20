@@ -89,7 +89,7 @@ class SessionPool {
 }
 
 export function createIServMcpServer(): McpServer {
-  const server = new McpServer({ name: "aplanatic-iserv", version: "0.4.1" });
+  const server = new McpServer({ name: "aplanatic-iserv", version: "0.5.0" });
   const sessions = new SessionPool();
   const withClient = async (
     action: (client: IServClient) => Promise<unknown>,
@@ -323,6 +323,25 @@ export function createIServMcpServer(): McpServer {
     },
     async ({ query, limit }) =>
       withClient((client) => client.users.searchAutocomplete(query, limit)),
+  );
+  server.registerTool(
+    "iserv_timetable_week",
+    {
+      title: "Personal timetable week",
+      description:
+        "Return this week's personal timetable as a period×weekday grid with lessons and changes. Prefer this over iserv_timetable_overview.",
+      inputSchema: z.object({
+        startDate: z
+          .string()
+          .optional()
+          .describe("Optional week start as DD.MM.YYYY or YYYY-MM-DD"),
+      }),
+      annotations: annotations.read,
+    },
+    async ({ startDate }) =>
+      withClient((client) =>
+        client.timetable.getWeek(startDate ? { startDate } : {}),
+      ),
   );
   server.registerTool(
     "iserv_read_many",
