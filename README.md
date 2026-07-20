@@ -3,6 +3,8 @@
 Local stdio MCP server for normal-user IServ access. It shares the native-keychain profile
 created by `@aplanatic/iserv-cli` and never returns passwords, cookies, or tokens to agents.
 
+Current package version: **0.5.16** (pins `@aplanatic/iserv-api`).
+
 Configure npm authentication for the Aplanatic GitHub Packages registry, then run
 `npm install --global @aplanatic/iserv-mcp`.
 
@@ -15,30 +17,50 @@ Configure npm authentication for the Aplanatic GitHub Packages registry, then ru
 ```
 
 Read tools are generated from the canonical API route catalog. Supported write
-and destructive tools execute immediately and carry accurate MCP annotations.
-There is no arbitrary HTTP, shell, or filesystem tool.
+and destructive tools execute immediately and carry accurate MCP annotations
+(`readOnlyHint` / `destructiveHint`). There is no arbitrary HTTP, shell, or filesystem tool.
 
 Verified module tools cover exercises, timetable, polls, forums, news, course
-selection, mailing lists, and printing. Authenticated HTML is reduced to structural
-counts before entering the MCP response. Experimental routes are visible in the
-catalog resource but are never registered as callable tools.
+selection, mailing lists, and printing. Prefer structured loaders when available;
+otherwise authenticated HTML is reduced to `HtmlExtractedData` before entering the MCP
+response. Experimental routes are visible in the catalog resource but are never registered
+as callable tools.
 
 Authentication status resources include the verified display name and an installed-module
-capability matrix. Messenger room, message, member, and profile reads renew an older
-keychain profile's scoped Matrix session automatically. They never send read receipts;
-results remain bounded and redacted.
+capability matrix. Messenger room, message, member, contact, and profile reads renew an
+older keychain profile's scoped Matrix session automatically. They never send read receipts;
+results remain bounded and redacted via `presentForDisplay` where applicable.
 
 ## Agent-first discovery and speed
 
 Start with the compact tools instead of scanning or guessing the full generated tool set:
 
-- `iserv_auth_status` returns the verified account name and module capability matrix.
-- `iserv_search_routes` ranks and filters catalog operations without requiring login.
-- `iserv_search_users` uses the bounded fast autocomplete endpoint.
-- `iserv_read_many` runs up to eight supported session GET routes concurrently.
-- `iserv_messenger_list_rooms`, `iserv_messenger_list_messages`,
-  `iserv_messenger_list_members`, and `iserv_messenger_get_profile` provide bounded Matrix
-  reads without sending receipts.
+| Tool | Role |
+|---|---|
+| `iserv_auth_status` | Verified account name and module capability matrix |
+| `iserv_auth_start_browser` | Start system-browser login for a profile |
+| `iserv_search_routes` | Rank/filter catalog operations (no login required) |
+| `iserv_search_users` | Bounded autocomplete user search |
+| `iserv_read_many` | Up to eight supported session GET routes concurrently |
+| `iserv_timetable_week` | Structured week grid |
+| `iserv_timetable_today` | Structured today view |
+| `iserv_messenger_list_rooms` | Bounded room list (no receipts) |
+| `iserv_messenger_list_contacts` | DM contacts with display names |
+| `iserv_messenger_list_messages` | Bounded message history |
+| `iserv_messenger_list_members` | Room members |
+| `iserv_messenger_get_profile` | Matrix profile |
+
+Explicit write / destructive tools (annotations warn clients):
+
+- `iserv_notifications_read_all`
+- `iserv_mail_send`
+- `iserv_messenger_send_message`
+- `iserv_messenger_delete_message`
+- `iserv_messenger_leave_room`
+- `iserv_calendar_delete_event`
+
+Additional read tools are generated from supported catalog routes (for example news,
+exercises, polls, forums, holidays). Use `iserv_search_routes` to discover them.
 
 The stdio process keeps a successfully restored client for 30 seconds and auth status for
 15 seconds. This avoids repeated keychain/native-module and cookie setup during an agent

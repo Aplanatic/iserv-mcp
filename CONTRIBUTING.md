@@ -10,6 +10,7 @@ Contributions must preserve bounded tools, accurate annotations, and privacy.
 - Every tool needs a bounded schema, bounded/redacted output, and correct `readOnlyHint` and
   `destructiveHint` annotations.
 - Route tools must come from the canonical API catalog rather than duplicated URL strings.
+- Prefer structured loaders / `presentForDisplay` over raw HTML dumps.
 - Report vulnerabilities through [SECURITY.md](SECURITY.md), not a public issue.
 
 Run before submitting:
@@ -22,4 +23,5 @@ gitleaks git --redact=100 --log-opts=--all .
 ```
 
 Live tests are local-only, read-only, and must run through the production stdio transport
-without printing live data or identifiers.
+without printing live data or identifiers. Update [README.md](README.md) and
+[CHANGELOG.md](CHANGELOG.md) when tools or behavior change.
