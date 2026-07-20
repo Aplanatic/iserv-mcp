@@ -24,6 +24,16 @@ selection, mailing lists, and printing. Authenticated HTML is reduced to structu
 counts before entering the MCP response. Experimental routes are visible in the
 catalog resource but are never registered as callable tools.
 
+Authentication status resources include the verified display name and an installed-module
+capability matrix. Messenger room, message, member, and profile reads renew an older
+keychain profile's scoped Matrix session automatically. They never send read receipts;
+results remain bounded and redacted.
+
+For a local authenticated, read-only production-path check, run
+`npm run test:live`. It starts the built stdio binary and reports only pass/fail
+booleans; it does not print account names, room names, messages, hostnames, or
+response bodies.
+
 Run `iserv auth login --url iserv.example` before starting the server. The real
 instance hostname and all credentials must remain in local configuration and
 the operating system credential store.

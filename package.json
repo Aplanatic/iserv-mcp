@@ -1,6 +1,6 @@
 {
   "name": "@aplanatic/iserv-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Local stdio MCP server for normal-user IServ access",
   "type": "module",
   "bin": { "iserv-mcp": "dist/main.mjs" },
@@ -12,12 +12,13 @@
     "lint:fix": "biome check --write src tests",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:live": "npm run build && node scripts/live-smoke.mjs",
     "check:sensitive": "node scripts/check-sensitive.mjs",
     "check": "npm run check:sensitive && npm run lint && npm run typecheck && npm test && npm run build",
     "prepare": "npm run build"
   },
   "dependencies": {
-    "@aplanatic/iserv-api": "^1.6.0",
+    "@aplanatic/iserv-api": "^1.7.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^4.3.6"
   },

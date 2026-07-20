@@ -41,8 +41,18 @@ async function withClient(action: (client: IServClient) => Promise<unknown>) {
   }
 }
 
+async function withMessengerClient(
+  action: (client: IServClient) => Promise<unknown>,
+) {
+  try {
+    return success(await action(await new AuthBroker().restoreMessenger()));
+  } catch (error) {
+    return failure(error);
+  }
+}
+
 export function createIServMcpServer(): McpServer {
-  const server = new McpServer({ name: "aplanatic-iserv", version: "0.2.0" });
+  const server = new McpServer({ name: "aplanatic-iserv", version: "0.3.0" });
 
   server.registerResource(
     "routes",
@@ -189,6 +199,60 @@ export function createIServMcpServer(): McpServer {
   }
 
   server.registerTool(
+    "iserv_messenger_list_rooms",
+    {
+      title: "List messenger rooms",
+      description:
+        "List joined rooms without sending messages or read receipts.",
+      inputSchema: z.object({}),
+      annotations: annotations.read,
+    },
+    async () => withMessengerClient((client) => client.messenger.getRooms()),
+  );
+  server.registerTool(
+    "iserv_messenger_list_messages",
+    {
+      title: "List messenger messages",
+      description:
+        "Read a bounded page from a joined room without sending a read receipt.",
+      inputSchema: z.object({
+        roomId: z.string().min(1),
+        limit: z.number().int().min(1).max(100).default(20),
+        from: z.string().optional(),
+      }),
+      annotations: annotations.read,
+    },
+    async ({ roomId, limit, from }) =>
+      withMessengerClient((client) =>
+        client.messenger.getMessages(roomId, {
+          limit,
+          ...(from ? { from } : {}),
+        }),
+      ),
+  );
+  server.registerTool(
+    "iserv_messenger_list_members",
+    {
+      title: "List messenger room members",
+      description: "List current members of a joined room.",
+      inputSchema: z.object({ roomId: z.string().min(1) }),
+      annotations: annotations.read,
+    },
+    async ({ roomId }) =>
+      withMessengerClient((client) => client.messenger.getMembers(roomId)),
+  );
+  server.registerTool(
+    "iserv_messenger_get_profile",
+    {
+      title: "Read a messenger profile",
+      description: "Read a visible Matrix display name and avatar reference.",
+      inputSchema: z.object({ userId: z.string().min(1) }),
+      annotations: annotations.read,
+    },
+    async ({ userId }) =>
+      withMessengerClient((client) => client.messenger.getProfile(userId)),
+  );
+  server.registerTool(
     "iserv_notifications_read_all",
     {
       title: "Mark all notifications read",
@@ -229,7 +293,9 @@ export function createIServMcpServer(): McpServer {
       annotations: annotations.write,
     },
     async ({ roomId, body }) =>
-      withClient((client) => client.messenger.sendMessage(roomId, body)),
+      withMessengerClient((client) =>
+        client.messenger.sendMessage(roomId, body),
+      ),
   );
   server.registerTool(
     "iserv_messenger_delete_message",
@@ -243,7 +309,9 @@ export function createIServMcpServer(): McpServer {
       annotations: annotations.destructive,
     },
     async ({ roomId, eventId }) =>
-      withClient((client) => client.messenger.deleteMessage(roomId, eventId)),
+      withMessengerClient((client) =>
+        client.messenger.deleteMessage(roomId, eventId),
+      ),
   );
   server.registerTool(
     "iserv_messenger_leave_room",
@@ -254,7 +322,7 @@ export function createIServMcpServer(): McpServer {
       annotations: annotations.destructive,
     },
     async ({ roomId }) =>
-      withClient(async (client) => {
+      withMessengerClient(async (client) => {
         await client.messenger.leaveRoom(roomId);
         return { left: true, roomId };
       }),

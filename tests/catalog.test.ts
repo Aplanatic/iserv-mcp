@@ -20,10 +20,19 @@ describe("MCP catalog", () => {
         "forums.list",
         "news.list",
         "print.overview",
+        "account.info",
+        "calendar.overview",
+        "files.overview",
+        "etherpad.list",
+        "groupview.overview",
+        "office.overview",
       ]),
     );
     expect(readableRoutes.map((route) => route.id)).not.toContain(
       "pinboard.list",
+    );
+    expect(readableRoutes.map((route) => route.id)).not.toContain(
+      "calendar.plugin_events",
     );
     const firstRoute = readableRoutes.at(0);
     expect(firstRoute).toBeDefined();

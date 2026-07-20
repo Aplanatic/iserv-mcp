@@ -46,6 +46,15 @@ describe("IServ MCP server", () => {
       true,
     );
     expect(tools.some((tool) => tool.name === "iserv_news_list")).toBe(true);
+    expect(tools.some((tool) => tool.name === "iserv_etherpad_list")).toBe(
+      true,
+    );
+    expect(
+      tools.some((tool) => tool.name === "iserv_messenger_list_rooms"),
+    ).toBe(true);
+    expect(
+      tools.some((tool) => tool.name === "iserv_messenger_list_members"),
+    ).toBe(true);
     expect(tools.some((tool) => tool.name === "iserv_pinboard_list")).toBe(
       false,
     );
