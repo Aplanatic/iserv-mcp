@@ -1,4 +1,4 @@
-import { redactValue } from "@aplanatic/iserv-api";
+import { presentForDisplay, redactValue } from "@aplanatic/iserv-api";
 
 const MAX_TEXT = 48_000;
 
@@ -7,7 +7,7 @@ const MAX_TEXT = 48_000;
  * Prefer tables/lists over HTML dumps.
  */
 export function formatForAgent(value: unknown): string {
-  const redacted = redactValue(value);
+  const redacted = presentForDisplay(redactValue(value));
   const text = formatValue(redacted, 0);
   if (text.length > MAX_TEXT) {
     return `${text.slice(0, MAX_TEXT)}\n…[truncated]`;
