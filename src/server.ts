@@ -89,7 +89,7 @@ class SessionPool {
 }
 
 export function createIServMcpServer(): McpServer {
-  const server = new McpServer({ name: "aplanatic-iserv", version: "0.5.7" });
+  const server = new McpServer({ name: "aplanatic-iserv", version: "0.5.8" });
   const sessions = new SessionPool();
   const withClient = async (
     action: (client: IServClient) => Promise<unknown>,
@@ -431,7 +431,16 @@ export function createIServMcpServer(): McpServer {
       inputSchema: z.object({}),
       annotations: annotations.read,
     },
-    async () => withMessengerClient((client) => client.messenger.getRooms()),
+    async () =>
+      withMessengerClient(async (client) => {
+        const rooms = await client.messenger.getRooms();
+        return {
+          title: "Messenger rooms",
+          empty: rooms.length === 0,
+          items: rooms,
+          ...(rooms.length === 0 ? { message: "No joined rooms." } : {}),
+        };
+      }),
   );
   server.registerTool(
     "iserv_messenger_list_contacts",
