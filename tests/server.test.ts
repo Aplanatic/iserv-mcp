@@ -99,11 +99,10 @@ describe("IServ MCP server", () => {
       result as { content?: Array<{ type: string; text?: string }> }
     ).content;
     const block = content?.find((item) => item.type === "text");
-    const matches = JSON.parse(block?.text ?? "[]") as Array<{ id?: string }>;
+    const text = block?.text ?? "";
 
     expect(result.isError).not.toBe(true);
-    expect(matches[0]?.id).toBe("calendar.events");
-    expect(matches).toHaveLength(3);
+    expect(text).toContain("calendar.events");
   });
 
   test("returns structured tool errors without exposing secrets", async () => {

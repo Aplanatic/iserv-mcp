@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { readableRoutes, toolNameForRoute } from "../src/catalog.js";
-import { boundedText } from "../src/format.js";
+import { formatForAgent } from "../src/format.js";
 
 describe("MCP catalog", () => {
   test("generates stable read-only tool names", () => {
@@ -41,8 +41,11 @@ describe("MCP catalog", () => {
     }
   });
 
-  test("bounds and redacts tool output", () => {
-    expect(boundedText({ password: "test-password" })).toContain("[redacted]");
-    expect(boundedText("x".repeat(60_000)).length).toBeLessThan(49_000);
+  test("redacts and formats tool output", () => {
+    const output = formatForAgent({ password: "test-password" });
+    expect(output).toContain("[redacted]");
+
+    const big = formatForAgent({ data: "x".repeat(60_000) });
+    expect(big.length).toBeLessThan(49_000);
   });
 });

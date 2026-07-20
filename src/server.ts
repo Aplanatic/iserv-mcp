@@ -11,7 +11,7 @@ import {
 } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { readableRoutes, toolNameForRoute } from "./catalog.js";
-import { failure, success } from "./format.js";
+import { failure, formatForAgent, success } from "./format.js";
 
 const annotations = {
   read: {
@@ -117,7 +117,7 @@ export function createIServMcpServer(): McpServer {
     "iserv://routes",
     {
       title: "IServ route catalog",
-      description: "Sanitized normal-user route definitions",
+      description: "Sanitized normal-user route definitions with counts",
       mimeType: "application/json",
     },
     async (uri) => ({
@@ -125,7 +125,11 @@ export function createIServMcpServer(): McpServer {
         {
           uri: uri.href,
           mimeType: "application/json",
-          text: JSON.stringify(routeCatalog.routes),
+          text: JSON.stringify({
+            count: routeCatalog.routes.length,
+            modules: routeCatalog.modules().length,
+            routes: routeCatalog.routes,
+          }),
         },
       ],
     }),
@@ -138,15 +142,38 @@ export function createIServMcpServer(): McpServer {
       description: "Modules represented in the route catalog",
       mimeType: "application/json",
     },
-    async (uri) => ({
-      contents: [
-        {
-          uri: uri.href,
-          mimeType: "application/json",
-          text: JSON.stringify(routeCatalog.tree()),
-        },
-      ],
-    }),
+    async (uri) => {
+      const tree = routeCatalog.tree();
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: "application/json",
+            text: JSON.stringify({
+              count: Object.keys(tree).length,
+              totalRoutes: Object.values(tree).reduce(
+                (sum, routes) => sum + routes.length,
+                0,
+              ),
+              modules: Object.fromEntries(
+                Object.entries(tree).map(([module, routes]) => [
+                  module,
+                  {
+                    routeCount: routes.length,
+                    methods: [...new Set(routes.map((r) => r.method))],
+                    routes: routes.map((r) => ({
+                      id: r.id,
+                      method: r.method,
+                      summary: r.summary,
+                    })),
+                  },
+                ]),
+              ),
+            }),
+          },
+        ],
+      };
+    },
   );
   server.registerResource(
     "auth-status",
