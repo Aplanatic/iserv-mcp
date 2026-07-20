@@ -22,6 +22,7 @@ describe("MCP catalog", () => {
         "print.overview",
         "account.info",
         "calendar.overview",
+        "calendar.holidays",
         "files.overview",
         "etherpad.list",
         "groupview.overview",
