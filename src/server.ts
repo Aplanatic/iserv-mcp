@@ -1,5 +1,6 @@
 import {
   AuthBroker,
+  type AuthStatus,
   type IServClient,
   ProfileStore,
   routeCatalog,
@@ -33,26 +34,83 @@ const annotations = {
   },
 };
 
-async function withClient(action: (client: IServClient) => Promise<unknown>) {
-  try {
-    return success(await action(await new AuthBroker().restore()));
-  } catch (error) {
-    return failure(error);
-  }
-}
+const CLIENT_TTL_MS = 30_000;
+const STATUS_TTL_MS = 15_000;
 
-async function withMessengerClient(
-  action: (client: IServClient) => Promise<unknown>,
-) {
-  try {
-    return success(await action(await new AuthBroker().restoreMessenger()));
-  } catch (error) {
-    return failure(error);
+class SessionPool {
+  private client:
+    | { value: Promise<IServClient>; expiresAt: number }
+    | undefined;
+  private messenger:
+    | { value: Promise<IServClient>; expiresAt: number }
+    | undefined;
+  private readonly statuses = new Map<
+    string,
+    { value: Promise<AuthStatus>; expiresAt: number }
+  >();
+
+  constructor(private readonly broker = new AuthBroker()) {}
+
+  restore(messenger = false): Promise<IServClient> {
+    const current = messenger ? this.messenger : this.client;
+    if (current && current.expiresAt > Date.now()) return current.value;
+    const value = messenger
+      ? this.broker.restoreMessenger()
+      : this.broker.restore();
+    const entry = { value, expiresAt: Date.now() + CLIENT_TTL_MS };
+    if (messenger) {
+      this.messenger = entry;
+      this.client = entry;
+    } else {
+      this.client = entry;
+    }
+    value.catch(() => this.invalidate());
+    return value;
+  }
+
+  status(profile?: string): Promise<AuthStatus> {
+    const key = profile ?? "";
+    const current = this.statuses.get(key);
+    if (current && current.expiresAt > Date.now()) return current.value;
+    const value = this.broker.status(profile);
+    this.statuses.set(key, {
+      value,
+      expiresAt: Date.now() + STATUS_TTL_MS,
+    });
+    value.catch(() => this.statuses.delete(key));
+    return value;
+  }
+
+  invalidate(): void {
+    this.client = undefined;
+    this.messenger = undefined;
+    this.statuses.clear();
   }
 }
 
 export function createIServMcpServer(): McpServer {
-  const server = new McpServer({ name: "aplanatic-iserv", version: "0.3.0" });
+  const server = new McpServer({ name: "aplanatic-iserv", version: "0.4.0" });
+  const sessions = new SessionPool();
+  const withClient = async (
+    action: (client: IServClient) => Promise<unknown>,
+  ) => {
+    try {
+      return success(await action(await sessions.restore()));
+    } catch (error) {
+      sessions.invalidate();
+      return failure(error);
+    }
+  };
+  const withMessengerClient = async (
+    action: (client: IServClient) => Promise<unknown>,
+  ) => {
+    try {
+      return success(await action(await sessions.restore(true)));
+    } catch (error) {
+      sessions.invalidate();
+      return failure(error);
+    }
+  };
 
   server.registerResource(
     "routes",
@@ -103,7 +161,7 @@ export function createIServMcpServer(): McpServer {
         {
           uri: uri.href,
           mimeType: "application/json",
-          text: JSON.stringify(await new AuthBroker().status()),
+          text: JSON.stringify(await sessions.status()),
         },
       ],
     }),
@@ -119,7 +177,7 @@ export function createIServMcpServer(): McpServer {
     async (uri, variables) => {
       const profile =
         typeof variables.profile === "string" ? variables.profile : undefined;
-      const value = await new AuthBroker().status(profile);
+      const value = await sessions.status(profile);
       return {
         contents: [
           {
@@ -143,7 +201,7 @@ export function createIServMcpServer(): McpServer {
     },
     async ({ profile }) => {
       try {
-        return success(await new AuthBroker().status(profile));
+        return success(await sessions.status(profile));
       } catch (error) {
         return failure(error);
       }
@@ -171,11 +229,110 @@ export function createIServMcpServer(): McpServer {
           url: metadata.hostname,
           username: metadata.username,
         });
+        sessions.invalidate();
         return success({ profile: metadata.name, authenticated: true });
       } catch (error) {
         return failure(error);
       }
     },
+  );
+
+  server.registerTool(
+    "iserv_search_routes",
+    {
+      title: "Search IServ capabilities",
+      description:
+        "Quickly find the best matching catalogued operations before choosing a more specific tool.",
+      inputSchema: z.object({
+        query: z.string().default(""),
+        module: z.string().optional(),
+        method: z
+          .enum(["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "PROPFIND"])
+          .optional(),
+        sideEffect: z
+          .enum(["read", "write", "communicative", "destructive"])
+          .optional(),
+        status: z
+          .enum(["supported", "experimental", "documented-only", "deprecated"])
+          .optional(),
+        limit: z.number().int().min(1).max(50).default(10),
+      }),
+      annotations: annotations.read,
+    },
+    async ({ query, module, method, sideEffect, status, limit }) =>
+      success(
+        routeCatalog
+          .search(query, {
+            ...(module ? { module } : {}),
+            ...(method ? { method } : {}),
+            ...(sideEffect ? { sideEffect } : {}),
+            ...(status ? { status } : {}),
+            limit,
+          })
+          .map((route) => ({
+            id: route.id,
+            method: route.method,
+            module: route.module,
+            status: route.status,
+            sideEffect: route.sideEffect,
+            summary: route.summary,
+            requiredParameters: route.parameters
+              .filter((parameter) => parameter.required)
+              .map((parameter) => parameter.name),
+          })),
+      ),
+  );
+  server.registerTool(
+    "iserv_search_users",
+    {
+      title: "Search visible users",
+      description:
+        "Use the fast bounded autocomplete endpoint to find visible users or groups.",
+      inputSchema: z.object({
+        query: z.string().min(2),
+        limit: z.number().int().min(1).max(50).default(10),
+      }),
+      annotations: annotations.read,
+    },
+    async ({ query, limit }) =>
+      withClient((client) => client.users.searchAutocomplete(query, limit)),
+  );
+  server.registerTool(
+    "iserv_read_many",
+    {
+      title: "Read multiple IServ routes",
+      description:
+        "Run up to eight supported session GET routes concurrently with one cached profile session.",
+      inputSchema: z.object({
+        requests: z
+          .array(
+            z.object({
+              routeId: z.string().min(1),
+              parameters: z
+                .record(
+                  z.string(),
+                  z.union([z.string(), z.number(), z.boolean()]),
+                )
+                .optional(),
+            }),
+          )
+          .min(1)
+          .max(8),
+        concurrency: z.number().int().min(1).max(8).default(4),
+      }),
+      annotations: annotations.read,
+    },
+    async ({ requests, concurrency }) =>
+      withClient((client) =>
+        client.executeReadRoutes(
+          requests.map((request) =>
+            request.parameters
+              ? { routeId: request.routeId, parameters: request.parameters }
+              : { routeId: request.routeId },
+          ),
+          { concurrency },
+        ),
+      ),
   );
 
   for (const route of readableRoutes) {

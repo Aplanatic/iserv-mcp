@@ -55,6 +55,11 @@ describe("IServ MCP server", () => {
     expect(
       tools.some((tool) => tool.name === "iserv_messenger_list_members"),
     ).toBe(true);
+    expect(tools.some((tool) => tool.name === "iserv_search_routes")).toBe(
+      true,
+    );
+    expect(tools.some((tool) => tool.name === "iserv_search_users")).toBe(true);
+    expect(tools.some((tool) => tool.name === "iserv_read_many")).toBe(true);
     expect(tools.some((tool) => tool.name === "iserv_pinboard_list")).toBe(
       false,
     );
@@ -73,6 +78,32 @@ describe("IServ MCP server", () => {
     expect(resourceTemplates.map((resource) => resource.uriTemplate)).toContain(
       "iserv://auth/status{?profile}",
     );
+  });
+
+  test("returns compact ranked route search results without authentication", async () => {
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+    const server = createIServMcpServer();
+    const client = new Client({ name: "test-client", version: "1.0.0" });
+    connections.push({ client, server });
+
+    await Promise.all([
+      server.connect(serverTransport),
+      client.connect(clientTransport),
+    ]);
+    const result = await client.callTool({
+      name: "iserv_search_routes",
+      arguments: { query: "calendar events", limit: 3 },
+    });
+    const content = (
+      result as { content?: Array<{ type: string; text?: string }> }
+    ).content;
+    const block = content?.find((item) => item.type === "text");
+    const matches = JSON.parse(block?.text ?? "[]") as Array<{ id?: string }>;
+
+    expect(result.isError).not.toBe(true);
+    expect(matches[0]?.id).toBe("calendar.events");
+    expect(matches).toHaveLength(3);
   });
 
   test("returns structured tool errors without exposing secrets", async () => {
