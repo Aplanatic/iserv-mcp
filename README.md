@@ -1,10 +1,9 @@
 # Aplanatic IServ MCP
 
-Private, local stdio MCP server for normal-user IServ access. It shares the
-native-keychain profile created by `@aplanatic/iserv-cli` and never returns
-passwords, cookies, or tokens to agents.
+Local stdio MCP server for normal-user IServ access. It shares the native-keychain profile
+created by `@aplanatic/iserv-cli` and never returns passwords, cookies, or tokens to agents.
 
-Authenticate npm for the private Aplanatic GitHub Packages registry, then run
+Configure npm authentication for the Aplanatic GitHub Packages registry, then run
 `npm install --global @aplanatic/iserv-mcp`.
 
 ```json
@@ -60,5 +59,12 @@ Etherpad, and Messenger over the real production stdio path.
 Run `iserv auth login --url iserv.example` before starting the server. The real
 instance hostname and all credentials must remain in local configuration and
 the operating system credential store.
+
+## Security and contributing
+
+Read [SECURITY.md](SECURITY.md) before reporting a vulnerability and use GitHub private
+vulnerability reporting. Never put a real hostname, identity, screenshot, HAR file,
+credential, cookie, token, message, file content, or live MCP response in an issue or pull
+request. See [CONTRIBUTING.md](CONTRIBUTING.md) for tool-boundary and sanitization rules.
 
 This software is not affiliated with or endorsed by IServ GmbH.
