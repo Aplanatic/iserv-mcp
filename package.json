@@ -1,6 +1,6 @@
 {
   "name": "@aplanatic/iserv-mcp",
-  "version": "0.5.15",
+  "version": "0.5.16",
   "description": "Local stdio MCP server for normal-user IServ access",
   "type": "module",
   "bin": {
