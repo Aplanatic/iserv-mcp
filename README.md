@@ -19,6 +19,11 @@ Read tools are generated from the canonical API route catalog. Supported write
 and destructive tools execute immediately and carry accurate MCP annotations.
 There is no arbitrary HTTP, shell, or filesystem tool.
 
+Verified module tools cover exercises, timetable, polls, forums, news, course
+selection, mailing lists, and printing. Authenticated HTML is reduced to structural
+counts before entering the MCP response. Experimental routes are visible in the
+catalog resource but are never registered as callable tools.
+
 Run `iserv auth login --url iserv.example` before starting the server. The real
 instance hostname and all credentials must remain in local configuration and
 the operating system credential store.

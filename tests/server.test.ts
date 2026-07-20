@@ -42,6 +42,13 @@ describe("IServ MCP server", () => {
     expect(
       tools.some((tool) => tool.name === "iserv_messenger_send_message"),
     ).toBe(true);
+    expect(tools.some((tool) => tool.name === "iserv_exercise_list")).toBe(
+      true,
+    );
+    expect(tools.some((tool) => tool.name === "iserv_news_list")).toBe(true);
+    expect(tools.some((tool) => tool.name === "iserv_pinboard_list")).toBe(
+      false,
+    );
     expect(
       tools.every(
         (tool) => !tool.name.includes("http") && !tool.name.includes("shell"),
@@ -59,7 +66,7 @@ describe("IServ MCP server", () => {
     );
   });
 
-  test("returns structured auth errors without exposing secrets", async () => {
+  test("returns structured tool errors without exposing secrets", async () => {
     const [clientTransport, serverTransport] =
       InMemoryTransport.createLinkedPair();
     const server = createIServMcpServer();
@@ -71,7 +78,7 @@ describe("IServ MCP server", () => {
       client.connect(clientTransport),
     ]);
     const result = await client.callTool({
-      name: "iserv_account_get",
+      name: "iserv_users_show",
       arguments: {},
     });
     const text = JSON.stringify(result);

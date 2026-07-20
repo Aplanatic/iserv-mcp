@@ -42,7 +42,7 @@ async function withClient(action: (client: IServClient) => Promise<unknown>) {
 }
 
 export function createIServMcpServer(): McpServer {
-  const server = new McpServer({ name: "aplanatic-iserv", version: "0.1.0" });
+  const server = new McpServer({ name: "aplanatic-iserv", version: "0.2.0" });
 
   server.registerResource(
     "routes",

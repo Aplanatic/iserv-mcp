@@ -7,9 +7,24 @@ describe("MCP catalog", () => {
     expect(readableRoutes.length).toBeGreaterThan(5);
     expect(
       readableRoutes.every(
-        (route) => route.sideEffect === "read" && route.method === "GET",
+        (route) =>
+          route.sideEffect === "read" &&
+          route.method === "GET" &&
+          route.status === "supported",
       ),
     ).toBe(true);
+    expect(readableRoutes.map((route) => route.id)).toEqual(
+      expect.arrayContaining([
+        "exercise.list",
+        "timetable.overview",
+        "forums.list",
+        "news.list",
+        "print.overview",
+      ]),
+    );
+    expect(readableRoutes.map((route) => route.id)).not.toContain(
+      "pinboard.list",
+    );
     const firstRoute = readableRoutes.at(0);
     expect(firstRoute).toBeDefined();
     if (firstRoute) {

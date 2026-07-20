@@ -4,7 +4,8 @@ export const readableRoutes = routeCatalog.routes.filter(
   (route) =>
     route.method === "GET" &&
     route.sideEffect === "read" &&
-    route.authentication === "session",
+    route.authentication === "session" &&
+    route.status === "supported",
 );
 
 export function toolNameForRoute(route: RouteDefinition): string {
