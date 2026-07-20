@@ -22,7 +22,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function formatValue(value: unknown, depth: number): string {
   if (value === null || value === undefined) return "null";
   if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (typeof value === "number" || typeof value === "boolean")
+    return String(value);
   if (Array.isArray(value)) return formatArray(value, depth);
   if (isRecord(value)) return formatRecord(value, depth);
   return String(value);
@@ -51,7 +52,9 @@ function formatArray(arr: unknown[], depth: number): string {
     return parts.join("\n");
   }
 
-  const items = arr.slice(0, 30).map((item, i) => `${i + 1}. ${formatCell(item)}`);
+  const items = arr
+    .slice(0, 30)
+    .map((item, i) => `${i + 1}. ${formatCell(item)}`);
   if (arr.length > 30) items.push(`… ${arr.length - 30} more`);
   return items.join("\n");
 }
@@ -69,7 +72,11 @@ function formatRecord(obj: Record<string, unknown>, depth: number): string {
   }
 
   // Timetable week
-  if (Array.isArray(obj.rows) && Array.isArray(obj.days) && Array.isArray(obj.periods)) {
+  if (
+    Array.isArray(obj.rows) &&
+    Array.isArray(obj.days) &&
+    Array.isArray(obj.periods)
+  ) {
     const header = [
       "Timetable",
       obj.class ? String(obj.class) : undefined,
@@ -88,6 +95,33 @@ function formatRecord(obj: Record<string, unknown>, depth: number): string {
     return parts.join("\n");
   }
 
+  // Timetable day
+  if (
+    typeof obj.date === "string" &&
+    typeof obj.dayName === "string" &&
+    Array.isArray(obj.rows) &&
+    Array.isArray(obj.lessons)
+  ) {
+    const header = [
+      "Timetable today",
+      obj.class ? String(obj.class) : undefined,
+      `${String(obj.dayName)} ${String(obj.date)}`,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    parts.push(header);
+    if (obj.empty || (obj.rows as unknown[]).length === 0) {
+      parts.push(String(obj.message ?? "No lessons today."));
+      return parts.join("\n");
+    }
+    parts.push(formatArray(obj.rows as unknown[], depth + 1));
+    if (Array.isArray(obj.changes) && obj.changes.length > 0) {
+      parts.push("", `Changes (${obj.changes.length}):`);
+      parts.push(formatArray(obj.changes, depth + 1));
+    }
+    return parts.join("\n");
+  }
+
   // Module list { title, items, message, empty }
   if (typeof obj.title === "string" && Array.isArray(obj.items)) {
     parts.push(String(obj.title));
@@ -97,6 +131,19 @@ function formatRecord(obj: Record<string, unknown>, depth: number): string {
     }
     if (obj.items.length === 0) {
       parts.push(String(obj.message ?? "Nothing to show."));
+      return parts.join("\n");
+    }
+    const first = obj.items[0];
+    if (
+      obj.items.length === 1 &&
+      isRecord(first) &&
+      typeof first.body === "string" &&
+      first.body.trim().length > 0
+    ) {
+      if (typeof first.meta === "string" && first.meta.trim()) {
+        parts.push(String(first.meta));
+      }
+      parts.push(String(first.body));
       return parts.join("\n");
     }
     parts.push(formatArray(obj.items, depth + 1));
@@ -134,7 +181,8 @@ function formatRecord(obj: Record<string, unknown>, depth: number): string {
     ([k, v]) => k !== "_summary" && scalar(v),
   );
   const arrays = Object.entries(obj).filter(
-    ([k, v]) => k !== "_summary" && Array.isArray(v) && (v as unknown[]).length > 0,
+    ([k, v]) =>
+      k !== "_summary" && Array.isArray(v) && (v as unknown[]).length > 0,
   );
   const records = Object.entries(obj).filter(
     ([k, v]) => k !== "_summary" && isRecord(v),
@@ -152,7 +200,9 @@ function formatRecord(obj: Record<string, unknown>, depth: number): string {
   }
   for (const [key, val] of records) {
     parts.push(`${humanize(key)}:`);
-    parts.push(indent(formatRecord(val as Record<string, unknown>, depth + 1), 2));
+    parts.push(
+      indent(formatRecord(val as Record<string, unknown>, depth + 1), 2),
+    );
   }
 
   return parts.length ? parts.join("\n") : JSON.stringify(obj, null, 2);
@@ -165,7 +215,8 @@ function formatCell(value: unknown): string {
     const clean = value.replace(/\s+/g, " ").trim();
     return clean.length > 100 ? `${clean.slice(0, 100)}…` : clean;
   }
-  if (typeof value === "number" || typeof value === "bigint") return String(value);
+  if (typeof value === "number" || typeof value === "bigint")
+    return String(value);
   if (Array.isArray(value)) return `[${value.length}]`;
   if (isRecord(value)) return `{${Object.keys(value).length}}`;
   return String(value);

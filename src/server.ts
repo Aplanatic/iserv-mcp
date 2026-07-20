@@ -11,7 +11,7 @@ import {
 } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { readableRoutes, toolNameForRoute } from "./catalog.js";
-import { failure, formatForAgent, success } from "./format.js";
+import { failure, success } from "./format.js";
 
 const annotations = {
   read: {
@@ -89,7 +89,7 @@ class SessionPool {
 }
 
 export function createIServMcpServer(): McpServer {
-  const server = new McpServer({ name: "aplanatic-iserv", version: "0.5.5" });
+  const server = new McpServer({ name: "aplanatic-iserv", version: "0.5.7" });
   const sessions = new SessionPool();
   const withClient = async (
     action: (client: IServClient) => Promise<unknown>,
@@ -344,6 +344,25 @@ export function createIServMcpServer(): McpServer {
       ),
   );
   server.registerTool(
+    "iserv_timetable_today",
+    {
+      title: "Personal timetable today",
+      description:
+        "Return today's personal timetable as a period list. Optional date overrides today. Prefer this when the user asks for today's schedule.",
+      inputSchema: z.object({
+        date: z
+          .string()
+          .optional()
+          .describe(
+            "Optional day as DD.MM.YYYY or YYYY-MM-DD (default: today)",
+          ),
+      }),
+      annotations: annotations.read,
+    },
+    async ({ date }) =>
+      withClient((client) => client.timetable.getToday(date ? { date } : {})),
+  );
+  server.registerTool(
     "iserv_read_many",
     {
       title: "Read multiple IServ routes",
@@ -382,6 +401,8 @@ export function createIServMcpServer(): McpServer {
   );
 
   for (const route of readableRoutes) {
+    // Dedicated tools above already cover these with richer schemas
+    if (route.id === "timetable.today") continue;
     server.registerTool(
       toolNameForRoute(route),
       {
@@ -421,8 +442,7 @@ export function createIServMcpServer(): McpServer {
       inputSchema: z.object({}),
       annotations: annotations.read,
     },
-    async () =>
-      withMessengerClient((client) => client.messenger.getContacts()),
+    async () => withMessengerClient((client) => client.messenger.getContacts()),
   );
   server.registerTool(
     "iserv_messenger_list_messages",
