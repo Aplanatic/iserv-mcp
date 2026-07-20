@@ -89,7 +89,7 @@ class SessionPool {
 }
 
 export function createIServMcpServer(): McpServer {
-  const server = new McpServer({ name: "aplanatic-iserv", version: "0.5.3" });
+  const server = new McpServer({ name: "aplanatic-iserv", version: "0.5.4" });
   const sessions = new SessionPool();
   const withClient = async (
     action: (client: IServClient) => Promise<unknown>,
@@ -411,6 +411,18 @@ export function createIServMcpServer(): McpServer {
       annotations: annotations.read,
     },
     async () => withMessengerClient((client) => client.messenger.getRooms()),
+  );
+  server.registerTool(
+    "iserv_messenger_list_contacts",
+    {
+      title: "List messenger contacts",
+      description:
+        "Resolve m.direct Matrix IDs to display names, with optional activity notes.",
+      inputSchema: z.object({}),
+      annotations: annotations.read,
+    },
+    async () =>
+      withMessengerClient((client) => client.messenger.getContacts()),
   );
   server.registerTool(
     "iserv_messenger_list_messages",
