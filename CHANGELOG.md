@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.17
+
+- Pin `@aplanatic/iserv-api@^1.9.0` (automatic session and Matrix token auto-refresh).
+- Sessions restored via `AuthBroker` now transparently re-authenticate on expiry.
+
 ## 0.5.16
 
 - Docs: note that ephemeral CLI logins are not restored by MCP.
